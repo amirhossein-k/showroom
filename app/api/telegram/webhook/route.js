@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { loadOverview } from '@/lib/overview';
 import { getSettings } from '@/lib/settings';
+import { connectDB } from '@/lib/db';
+import { Customer } from '@/lib/models';
+import { parseCustomerStartParam } from '@/lib/customerLink';
 import { digestText, chequesText, dormantText, sendTelegram, esc } from '@/lib/telegram';
 
 export const dynamic = 'force-dynamic';
@@ -15,15 +18,41 @@ export async function POST(req) {
   const msg = update.message || update.edited_message;
   if (!msg?.text) return NextResponse.json({ ok: true });
   const chatId = String(msg.chat.id);
-  const cmd = msg.text.trim().split(/\s+/)[0].split('@')[0];
+  const [rawCmd, arg] = msg.text.trim().split(/\s+/);
+  const cmd = rawCmd.split('@')[0];
 
   try {
+    // [جدید] اتصال مشتری با لینک دعوت: t.me/BOT?start=c_<id>_<sig>
+    if (cmd === '/start' && arg) {
+      const customerId = parseCustomerStartParam(arg);
+      if (customerId) {
+        await connectDB();
+        const c = await Customer.findByIdAndUpdate(customerId, { $set: { telegramChatId: chatId, notifyOptIn: true, lastContact: new Date() } }, { new: true });
+        const s = await getSettings();
+        await sendTelegram(
+          c
+            ? `سلام ${esc(c.name)} 👋\nبه ربات ${esc(s.showroomName)} وصل شدی. هر وقت ماشینی که دنبالشی${c.wanted ? ` (${esc(c.wanted)})` : ''} برسد، همین‌جا خبرت می‌کنیم.\nبرای لغو: /stop`
+            : 'لینک نامعتبر است.',
+          chatId
+        );
+        return NextResponse.json({ ok: true });
+      }
+    }
+    if (cmd === '/stop') {
+      await connectDB();
+      const r = await Customer.updateMany({ telegramChatId: chatId }, { $set: { notifyOptIn: false } });
+      if (r.modifiedCount) {
+        await sendTelegram('باشه، دیگر پیام معرفی خودرو برایت نمی‌فرستیم. برای فعال‌سازی دوباره لینک را از نمایشگاه بگیر.', chatId);
+        return NextResponse.json({ ok: true });
+      }
+    }
+
     const settings = await getSettings();
     const owner = String(settings.telegramChatId || process.env.TELEGRAM_OWNER_CHAT_ID || '');
 
     if (cmd === '/start' || cmd === '/id') {
       await sendTelegram(
-        `سلام ${esc(msg.from?.first_name || '')} 👋\nشناسه چت شما: <code>${chatId}</code>\nاین عدد را در «تنظیمات» پنل وارد کنید تا هشدارها برایتان ارسال شود.\n\nدستورات: /report گزارش کامل · /cheques چک‌ها · /dormant خواب سرمایه`,
+        `سلام ${esc(msg.from?.first_name || '')} 👋\nشناسه چت شما: ${chatId}\nاین عدد را در «تنظیمات» پنل وارد کنید تا هشدارها برایتان ارسال شود.\n\nدستورات: /report گزارش کامل · /cheques چک‌ها · /dormant خواب سرمایه`,
         chatId
       );
       return NextResponse.json({ ok: true });
