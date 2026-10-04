@@ -1,0 +1,15 @@
+'use client';
+import { useState } from 'react';
+import { api } from '@/lib/api';
+import { toFa } from '@/lib/persian';
+import { PageHeader, Section, Empty } from './ui';
+import { Modal, Field, ErrorText } from './inputs';
+import { useSaver } from './useSaver';
+import Icon from './Icon';
+
+export default function PartnersClient({ partners, cars }) {
+  const [modal, setModal] = useState(false); const [editing, setEditing] = useState(null);
+  return <><PageHeader title="شرکا" subtitle="درصد مشارکت و سهم سود هر معامله، روشن و بدون دعوا"><button className="btn-primary" onClick={() => { setEditing(null); setModal(true); }}><Icon name="plus" /> ثبت شریک</button></PageHeader><div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{partners.map((p) => <PartnerCard key={p._id} p={p} cars={cars} onEdit={() => { setEditing(p); setModal(true); }} />)}{!partners.length && <Empty>هنوز شریکی ثبت نشده.</Empty>}</div><Modal open={modal} onClose={() => setModal(false)} title={editing ? 'ویرایش شریک' : 'ثبت شریک'}><PartnerForm initial={editing} onDone={() => setModal(false)} /></Modal></>;
+}
+function PartnerCard({ p, cars, onEdit }) { const count = cars.filter((c) => (c.partners || []).some((x) => String(x.partner) === String(p._id))).length; return <div className="card p-5"><div className="flex items-start justify-between"><div className="flex items-center gap-3"><span className="grid h-11 w-11 place-items-center rounded-full bg-plate-soft text-plate"><Icon name="users" /></span><div><div className="font-extrabold">{p.name}</div><div className="text-sm text-ink-mute">{p.phone || 'تلفن ندارد'}</div></div></div><button onClick={onEdit} className="btn-ghost px-3"><Icon name="edit" size={17} /></button></div><div className="mt-5 grid grid-cols-2 gap-2"><div className="rounded-xl bg-paper p-3"><div className="text-sm text-ink-mute">پرونده‌های فعال</div><div className="num mt-1 text-xl font-black">{toFa(count)}</div></div><div className="rounded-xl bg-paper p-3"><div className="text-sm text-ink-mute">یادداشت</div><div className="mt-1 truncate text-sm font-bold">{p.note || '—'}</div></div></div></div> }
+function PartnerForm({ initial, onDone }) { const [f, setF] = useState({ name: '', phone: '', note: '', ...(initial || {}) }); const s = useSaver(); const set = (k, v) => setF({ ...f, [k]: v }); return <form onSubmit={(e) => { e.preventDefault(); if (!f.name) return; s.run(async () => { if (initial?._id) await api(`/api/partners/${initial._id}`, 'PATCH', f); else await api('/api/partners', 'POST', f); onDone?.(); }); }} className="space-y-4"><Field label="نام شریک *"><input className="input" value={f.name} onChange={(e) => set('name', e.target.value)} autoFocus /></Field><Field label="موبایل"><input dir="ltr" className="input text-left" value={f.phone || ''} onChange={(e) => set('phone', e.target.value)} /></Field><Field label="یادداشت"><textarea className="input min-h-[100px]" value={f.note || ''} onChange={(e) => set('note', e.target.value)} /></Field><ErrorText error={s.err} /><button className="btn-primary w-full" disabled={s.busy}>{s.busy ? 'در حال ذخیره…' : 'ذخیره شریک'}</button></form> }
