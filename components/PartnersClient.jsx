@@ -2,8 +2,8 @@
 import { useState } from 'react';
 import { api } from '@/lib/api';
 import { toFa } from '@/lib/persian';
-import { PageHeader, Section, Empty } from './ui';
-import { Modal, Field, ErrorText } from './inputs';
+import { PageHeader, Section, Empty, Field } from './ui';
+import { Modal, ErrorText } from './inputs';
 import { useSaver } from './useSaver';
 import Icon from './Icon';
 
