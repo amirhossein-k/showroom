@@ -7,6 +7,7 @@ import { formatDate, formatNumber, priceWords, toFa } from '@/lib/persian';
 import { PAYMENT_KINDS } from '@/lib/contractDefaults';
 import { bodySummary } from '@/lib/inspection';
 import PrintButton from '@/components/PrintButton';
+import { PartyIdentityPrint, ContractExtraPrint } from '@/components/ContractExtraPrint'; // [upgrade-v2]
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,7 @@ function Party({ title, p }) {
         {p?.name || '—'} {p?.fatherName ? `فرزند ${p.fatherName}` : ''}
       </div>
       <div>کد ملی: {toFa(p?.nationalId || '—')} · تلفن: {toFa(p?.phone || '—')}</div>
+      <PartyIdentityPrint p={p} />
       {p?.address && <div>نشانی: {p.address}</div>}
     </div>
   );
@@ -148,6 +150,8 @@ export default async function ContractPrintPage({ params }) {
             <li key={i}>{t}</li>
           ))}
         </ol>
+
+        <ContractExtraPrint c={c} />
 
         {w.length > 0 && (
           <>
