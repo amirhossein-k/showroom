@@ -11,6 +11,7 @@ const NAV = [
   { href: '/cheques', label: 'چک‌ها', icon: 'cheque' },
   { href: '/cashflow', label: 'نقدینگی و تسویه', icon: 'cash' },
   { href: '/partners', label: 'شرکا', icon: 'partners' },
+  { href: '/contracts', label: 'قولنامه‌ها', icon: 'cheque' },
   { href: '/colleagues', label: 'شبکه همکاران', icon: 'network' },
   { href: '/market', label: 'قیمت بازار', icon: 'market' },
   { href: '/reports', label: 'گزارش سود', icon: 'report' },
