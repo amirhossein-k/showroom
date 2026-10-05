@@ -58,7 +58,7 @@ export default async function CarDetailPage({ params }) {
         <div className="flex flex-col justify-center">
           <div className="mb-2 flex flex-wrap gap-2"><CarStatusBadge status={car.status} /><Badge cls={car.ownership === 'consignment' ? 'bg-amberx-soft text-amberx' : 'bg-plate-soft text-plate'}>{car.ownership === 'consignment' ? 'امانی' : 'ملکی'}</Badge></div>
           <h1 className="text-3xl font-black tracking-tight sm:text-4xl">{car.brand} {car.model}</h1>
-          <div className="mt-1 text-ink-mute">مدل {toFa(car.year)} · {car.color} · {formatNumber(car.mileage)} کیلومتر</div>
+          <div className="mt-1 text-ink-mute">مدل {toFa(car.year)}{car.trim ? ` · ${car.trim}` : ''} · {car.color} · {formatNumber(car.mileage)} کیلومتر</div>
           <div className="mt-4 flex flex-wrap items-center gap-4"><Plate plate={car.plate} size="lg" /> <span className="text-sm text-ink-mute">VIN: <b dir="ltr" className="font-mono text-ink-soft">{car.vin || '—'}</b></span></div>
           <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
             <div className="rounded-2xl bg-paper p-3"><div className="text-sm text-ink-mute">{fin.sold ? 'قیمت فروش' : 'قیمت آگهی'}</div><Money value={fin.sold ? car.salePrice : car.askingPrice} words size="lg" /></div>
