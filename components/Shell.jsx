@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Icon from './Icon';
+import PageGuide from './PageGuide'; // [guide]
 
 const NAV = [
   { href: '/', label: 'داشبورد امروز', icon: 'dashboard' },
@@ -16,6 +17,7 @@ const NAV = [
   { href: '/market', label: 'قیمت بازار', icon: 'market' },
   { href: '/reports', label: 'گزارش سود', icon: 'report' },
   { href: '/settings', label: 'تنظیمات و تلگرام', icon: 'settings' },
+  { href: '/guide', label: 'راهنما', icon: 'report' }, // [guide]
 ];
 
 function Brand() {
@@ -98,7 +100,7 @@ export default function Shell({ children }) {
         </div>
       )}
 
-      <main className="mx-auto max-w-[1400px] px-4 pb-24 pt-5 sm:px-6 lg:px-10 lg:pt-8">{children}</main>
+      <main className="mx-auto max-w-[1400px] px-4 pb-24 pt-5 sm:px-6 lg:px-10 lg:pt-8"><PageGuide />{children}</main>
     </div>
   );
 }
