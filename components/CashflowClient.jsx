@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { formatDate, formatNumber, priceShort, toFa } from '@/lib/persian';
 import { TX_CATEGORIES, TX_METHODS } from '@/lib/constants';
@@ -8,8 +8,17 @@ import { Modal } from './inputs';
 import { TxForm } from './forms';
 import Icon from './Icon';
 import CashflowPrint from './CashflowPrint';
+import ReceivablesPanel from './ReceivablesPanel';
 
-export default function CashflowClient({ transactions = [], cars = [], cheques = [], stats = {} }) {
+export default function CashflowClient({ transactions = [], cars = [], cheques = [], stats = {}, receivables = [] }) {
+  const receivablesRef = useRef(null);
+  const showReceivables = () => {
+    const target = receivablesRef.current;
+    if (!target) return;
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    target.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+    target.focus({ preventScroll: true });
+  };
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [printRow, setPrintRow] = useState(null);
@@ -38,11 +47,24 @@ export default function CashflowClient({ transactions = [], cars = [], cheques =
           ['خروجی ثبت‌شده', outgoing, 'text-alarm'],
           ['خالص نقد ثبت‌شده', incoming - outgoing, incoming - outgoing < 0 ? 'text-alarm' : 'text-cash'],
           ['مطالبات باز', stats.receivableTotal || 0, 'text-amberx'],
-        ].map(([label, amount, color]) => <div key={label} className="card min-w-0 p-4">
-          <div className="text-sm text-ink-mute">{label}</div>
-          <div className={`num mt-2 break-words text-xl font-black sm:text-2xl ${color}`} title={`${formatNumber(amount)} تومان`}>{priceShort(amount)}</div>
-          <div className="text-sm text-ink-mute">تومان</div>
-        </div>)}
+        ].map(([label, amount, color]) => {
+          const content = <>
+            <div className="text-sm text-ink-mute">{label}</div>
+            <div className={`num mt-2 break-words text-xl font-black sm:text-2xl ${color}`} title={`${formatNumber(amount)} تومان`}>{priceShort(amount)}</div>
+            <div className="text-sm text-ink-mute">تومان</div>
+          </>;
+          return label === 'مطالبات باز'
+            ? <button key={label} type="button" onClick={showReceivables} aria-controls="cashflow-receivables"
+                className="card min-w-0 p-4 text-right hover:border-plate focus-visible:border-plate">
+                {content}
+                <div className="mt-2 text-sm font-bold text-plate">مشاهده ریز {toFa(receivables.length)} خودرو ↓</div>
+              </button>
+            : <div key={label} className="card min-w-0 p-4">{content}</div>;
+        })}
+      </div>
+      <div id="cashflow-receivables" ref={receivablesRef} tabIndex={-1}
+        role="region" aria-label="ریز مطالبات خودروهای فروخته‌شده" style={{ scrollMarginTop: '24px' }}>
+        <ReceivablesPanel receivables={receivables} cars={cars} />
       </div>
       <Section className="mt-5" title="تراکنش‌ها" action={
         <div className="flex flex-wrap gap-1 rounded-lg bg-paper p-1" role="group" aria-label="فیلتر تراکنش‌ها">
