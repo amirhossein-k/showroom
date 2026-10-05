@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connectDB, plain } from '@/lib/db';
-import { Car, Customer, Partner, Transaction, Cheque } from '@/lib/models';
+import { Car, Customer, Partner, Transaction, Cheque, Contract } from '@/lib/models';
 import { getSettings } from '@/lib/settings';
 import { carFinancials, isSold } from '@/lib/calc';
 import { loadOverview } from '@/lib/overview';
@@ -15,12 +15,17 @@ import MarketCompare from '@/components/MarketCompare';
 import { DeleteButton } from '@/components/forms';
 import Icon from '@/components/Icon';
 import CarActions from '@/components/CarActions';
+import CollectionPanel from '@/components/CollectionPanel';
+import SettlementPanel from '@/components/SettlementPanel';
+import { carCollection } from '@/lib/collections';
+import { carSettlement } from '@/lib/settlement';
 export const dynamic = 'force-dynamic';
 
 export default async function CarDetailPage({ params }) {
   await connectDB();
-  const [raw, settings, customersRaw, partnersRaw, txRaw, chequesRaw, allCarsRaw] = await Promise.all([
+  const [raw, settings, customersRaw, partnersRaw, txRaw, chequesRaw, allCarsRaw, contractsRaw] = await Promise.all([
     Car.findById(params.id).lean(), getSettings(), Customer.find({}).sort({ createdAt: -1 }).lean(), Partner.find({}).lean(), Transaction.find({ car: params.id }).sort({ date: -1 }).lean(), Cheque.find({ car: params.id }).sort({ dueDate: 1 }).lean(), Car.find({}).lean(),
+    Contract.find({ car: params.id, status: 'signed' }).select('car number buyer status payments').lean(),
   ]);
   if (!raw) notFound();
   const car = plain(raw);
@@ -35,6 +40,11 @@ export default async function CarDetailPage({ params }) {
   const interested = customers.filter((c) => (c.interestedCars || []).some((x) => String(x) === String(car._id)));
   const key = `${car.brand} ${car.model}`.replace(/[\s‌]/g, '').toLowerCase();
   const matches = customers.filter((c) => !interested.some((x) => x._id === c._id) && c.status !== 'won' && ((c.wanted || '').replace(/[\s‌]/g, '').toLowerCase().includes(key) || (c.budgetMax && car.askingPrice <= c.budgetMax && (!c.budgetMin || car.askingPrice >= c.budgetMin))));
+  // [collections] + [settlement]
+  const contracts = plain(contractsRaw);
+  const collection = fin.sold ? carCollection(car, { transactions, cheques, contracts }) : null;
+  const settle = carSettlement(car, fin, transactions, collection);
+  const buyerPhone = customers.find((c) => String(c._id) === String(car.buyer))?.phone || contracts[0]?.buyer?.phone || '';
   const received = transactions.filter((t) => t.direction === 'in').reduce((a, t) => a + t.amount, 0);
   const paid = transactions.filter((t) => t.direction === 'out').reduce((a, t) => a + t.amount, 0);
   const purchaseTotal = car.ownership === 'consignment' ? car.ownerPrice || 0 : car.purchasePrice || 0;
@@ -79,6 +89,18 @@ export default async function CarDetailPage({ params }) {
           </div>
           <div className="mt-4 rounded-xl bg-paper px-3 py-2 text-sm leading-6 text-ink-mute">محاسبه بر اساس {toFa(fin.days)} روز ماندگاری و نرخ هزینه فرصت ماهانه {toFa(fin.rate)}٪ انجام شده است. هزینه خواب: {priceWords(fin.capitalCost)}.</div>
         </Section>
+        {collection && (
+          <div id="collection" className="xl:col-span-2" style={{ scrollMarginTop: '24px' }}>
+            <Section title="پیگیری وصول از خریدار" tone={collection.overdue ? 'alarm' : undefined}>
+              <CollectionPanel car={car} c={collection} phone={buyerPhone} />
+            </Section>
+          </div>
+        )}
+        <div id="settlement" className="xl:col-span-2" style={{ scrollMarginTop: '24px' }}>
+          <Section title={car.ownership === 'consignment' ? 'تسویه با مالک امانی و شرکا' : 'تسویه با شرکا و کمیسیون‌ها'}>
+            <SettlementPanel car={car} st={settle} />
+          </Section>
+        </div>
         <Section title="هزینه‌های جانبی"><ExpensesEditor carId={car._id} expenses={car.expenses} /></Section>
         <Section title="شرکا و تقسیم سود"><PartnersEditor carId={car._id} partners={car.partners} allPartners={partners} split={fin.split} /></Section>
         <Section title="کمیسیون معامله"><CommissionsEditor carId={car._id} commissions={car.commissions} refPrice={fin.refPrice} /></Section>

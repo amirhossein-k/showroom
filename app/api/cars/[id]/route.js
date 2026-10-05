@@ -17,7 +17,9 @@ const SOLD = ['sold', 'awaiting_transfer'];
 export async function PATCH(req, { params }) {
   try {
     await connectDB();
-    const car = await Car.findByIdAndUpdate(params.id, { $set: clean(await req.json()) }, { new: true, runValidators: true });
+    const body = clean(await req.json());
+    delete body.receivable; // [collections] پیگیری وصول فقط از /api/cars/[id]/collection تغییر می‌کند
+    const car = await Car.findByIdAndUpdate(params.id, { $set: body }, { new: true, runValidators: true });
     if (!car) return fail({ message: 'یافت نشد' }, 404);
 
     let channel = null;

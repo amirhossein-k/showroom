@@ -2,6 +2,7 @@ import { connectDB, plain } from '@/lib/db';
 import { Transaction, Car, Cheque, Contract } from '@/lib/models';
 import { loadOverview } from '@/lib/overview';
 import { buildReceivableRows } from '@/lib/receivables';
+import { loadCollections } from '@/lib/collectionsData';
 import CashflowClient from '@/components/CashflowClient';
 export const dynamic = 'force-dynamic';
 export default async function CashflowPage() {
@@ -11,6 +12,8 @@ export default async function CashflowPage() {
     ? plain(await Contract.find({ car: { $in: o.receivables.map((c) => c._id) }, status: 'signed' })
         .select('car number buyer.name status').sort({ signedAt: -1, _id: -1 }).lean())
     : [];
-  const receivables = buildReceivableRows(o.receivables, signedContracts, plain(q));
-  return <CashflowClient transactions={plain(t)} cars={plain(cars)} cheques={plain(q)} stats={o.stats} receivables={receivables} />;
+  const collections = await loadCollections(o); // [collections]
+  const receivables = buildReceivableRows(o.receivables, signedContracts, plain(q), collections.byCar);
+  return <CashflowClient transactions={plain(t)} cars={plain(cars)} cheques={plain(q)} stats={o.stats} receivables={receivables}
+    collections={{ rows: collections.rows, alerts: collections.alerts, totals: collections.totals, settlements: collections.settlements, settlementTotals: collections.settlementTotals }} />;
 }

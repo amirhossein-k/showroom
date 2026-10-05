@@ -9,8 +9,9 @@ import { TxForm } from './forms';
 import Icon from './Icon';
 import CashflowPrint from './CashflowPrint';
 import ReceivablesPanel from './ReceivablesPanel';
+import { CollectionAlerts, CollectionSummary, ReconcilePanel, OpenSettlements } from './CollectionsBoard';
 
-export default function CashflowClient({ transactions = [], cars = [], cheques = [], stats = {}, receivables = [] }) {
+export default function CashflowClient({ transactions = [], cars = [], cheques = [], stats = {}, receivables = [], collections = null }) {
   const receivablesRef = useRef(null);
   const showReceivables = () => {
     const target = receivablesRef.current;
@@ -62,10 +63,18 @@ export default function CashflowClient({ transactions = [], cars = [], cheques =
             : <div key={label} className="card min-w-0 p-4">{content}</div>;
         })}
       </div>
+      {collections && <>
+        <CollectionSummary totals={collections.totals} settlementTotals={collections.settlementTotals} />
+        <CollectionAlerts alerts={collections.alerts} />
+      </>}
       <div id="cashflow-receivables" ref={receivablesRef} tabIndex={-1}
         role="region" aria-label="ریز مطالبات خودروهای فروخته‌شده" style={{ scrollMarginTop: '24px' }}>
         <ReceivablesPanel receivables={receivables} cars={cars} />
       </div>
+      {collections && <>
+        <ReconcilePanel rows={collections.rows} />
+        <OpenSettlements list={collections.settlements} />
+      </>}
       <Section className="mt-5" title="تراکنش‌ها" action={
         <div className="flex flex-wrap gap-1 rounded-lg bg-paper p-1" role="group" aria-label="فیلتر تراکنش‌ها">
           {[['all', 'همه'], ['in', 'ورودی'], ['out', 'خروجی']].map(([k, l]) =>
@@ -83,6 +92,7 @@ export default function CashflowClient({ transactions = [], cars = [], cheques =
                 <div className="mt-1 break-words text-sm text-ink-mute">{formatDate(t.date)}{t.car ? ` · ${t.car.brand} ${t.car.model}` : ''} · {TX_METHODS[t.method] || t.method}</div>
                 {t.note && <p className="mt-1 whitespace-pre-wrap break-words text-sm text-ink-soft">{t.note}</p>}
                 {t.contract && <p className="mt-1 text-sm text-plate">متصل به قولنامه</p>}
+                {t.direction === 'in' && <p className={`mt-1 text-sm ${t.verified ? 'text-cash' : 'text-ink-mute'}`}>{t.verified ? `✓ تطبیق‌شده با بانک${t.bankRef ? ' · مرجع ' + toFa(t.bankRef) : ''}` : 'هنوز با رسید بانکی تطبیق نشده'}</p>}
               </div>
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end">

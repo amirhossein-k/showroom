@@ -1,7 +1,8 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { formatDate, formatNumber, toFa } from '@/lib/persian';
+import { formatDate, formatNumber, relativeDays, toFa } from '@/lib/persian';
+import { CollectionBadges } from './CollectionPanel';
 import { filterRows } from '@/lib/receivables';
 import { TxForm } from './forms';
 import { Section, Empty } from './ui';
@@ -59,7 +60,7 @@ export default function ReceivablesPanel({ receivables = [], cars = [] }) {
             placeholder="نام خودرو، خریدار یا بخشی از پلاک" />
         </div>
         <div className="rp-filter" role="group" aria-label="فیلتر دریافت ثبت‌شده">
-          {[['all','همه مطالبات'],['none','بدون دریافت ثبت‌شده'],['partial','دریافت ناقص ثبت‌شده']].map(([key,label]) =>
+          {[['all','همه مطالبات'],['overdue','سررسید/پیگیری گذشته'],['verify','نیازمند تأیید'],['none','بدون دریافت ثبت‌شده'],['partial','دریافت ناقص ثبت‌شده']].map(([key,label]) =>
             <button type="button" key={key} aria-pressed={mode === key} onClick={() => setMode(key)}>{label}</button>)}
         </div>
       </div>
@@ -84,7 +85,15 @@ export default function ReceivablesPanel({ receivables = [], cars = [] }) {
               <div className="rp-remaining"><dt>مانده ثبت‌شده</dt><dd>{money(c.remaining)}</dd></div>
             </dl>
             <div>
-              <span className="rp-status">{c.received > 0 ? 'بخشی از دریافت ثبت شده' : 'دریافتی ثبت نشده'}</span>
+              {c.collection ? <CollectionBadges c={c.collection} />
+                : <span className="rp-status">{c.received > 0 ? 'بخشی از دریافت ثبت شده' : 'دریافتی ثبت نشده'}</span>}
+              {c.collection && <p className="rp-meta">
+                سررسید: {c.collection.dueDate ? <b className={c.collection.overdue ? 'text-alarm' : ''}>{formatDate(c.collection.dueDate)} ({relativeDays(c.collection.dueDate)})</b> : <b className="text-amberx">تعیین نشده</b>}
+                <br />آخرین تماس: {c.collection.lastContactAt ? `${formatDate(c.collection.lastContactAt)} (${relativeDays(c.collection.lastContactAt)})` : 'ثبت نشده'}
+                <br />پیگیری بعدی: {c.collection.nextFollowUp ? <b className={c.collection.followDue ? 'text-alarm' : ''}>{formatDate(c.collection.nextFollowUp)} ({relativeDays(c.collection.nextFollowUp)})</b> : 'تعیین نشده'}
+                <br />وصول تأییدشده با بانک: <b className="text-cash">{money(c.collection.verifiedIn)}</b>
+                {c.collection.claimCount > 0 && <><br />اعلام خریدار، بررسی‌نشده: <b className="text-plate">{money(c.collection.claimedAmount)}</b></>}
+              </p>}
               {c.pendingChequeCount > 0 && <p className="rp-meta">
                 {toFa(c.pendingChequeCount)} چک دریافتی در انتظار: {money(c.pendingChequeAmount)}
                 {c.nextChequeDue && <> · نزدیک‌ترین سررسید: {formatDate(c.nextChequeDue)}</>}
@@ -98,7 +107,7 @@ export default function ReceivablesPanel({ receivables = [], cars = [] }) {
                       onClick={() => {setSelected(selected === c._id ? '' : c._id);setSaved(false);}}>
                       {selected === c._id ? 'بستن فرم دریافت' : 'ثبت مبلغ دریافت‌شده'}
                     </button>}
-                <Link className="rp-link" href={`/cars/${c._id}`}>پرونده خودرو</Link>
+                <Link className="rp-link" href={`/cars/${c._id}#collection`}>پیگیری وصول و تطبیق بانکی</Link>
               </div>
               {c.contracts?.length > 1 && <p className="rp-meta">چند قولنامه امضاشده به این خودرو وصل است؛ قولنامه درست را پیش از ثبت دریافت بررسی کن.</p>}
             </div>

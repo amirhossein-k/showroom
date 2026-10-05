@@ -14,7 +14,10 @@ export async function PATCH(req, { params }) {
     const current = await Transaction.findById(params.id);
     if (!current) return fail({ message: 'تراکنش یافت نشد' }, 404);
     const data = transactionPayload(await req.json(), { partial: true, linked: Boolean(current.contract) });
-    const doc = await Transaction.findByIdAndUpdate(params.id, { $set: data }, { new: true, runValidators: true });
+    // [collections] اگر مبلغ/جهت/روش/خودرو عوض شود، تطبیق بانکی قبلی دیگر معتبر نیست
+    const changed = ['amount', 'direction', 'method', 'car'].some((k) => k in data && String(data[k] ?? '') !== String(current[k] ?? ''));
+    const update = changed && current.verified ? { $set: { ...data, verified: false }, $unset: { verifiedAt: 1, bankRef: 1, bankDate: 1 } } : { $set: data };
+    const doc = await Transaction.findByIdAndUpdate(params.id, update, { new: true, runValidators: true });
     if (!doc) return fail({ message: 'تراکنش یافت نشد' }, 404);
     return NextResponse.json(doc);
   } catch (error) {

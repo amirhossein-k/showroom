@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { loadOverview } from '@/lib/overview';
-import { digestText, chequesText, dormantText, sendTelegram } from '@/lib/telegram';
+import { digestText, chequesText, dormantText, sendTelegram, collectionAlertsText } from '@/lib/telegram';
+import { loadCollections } from '@/lib/collectionsData';
 import { SESSION_COOKIE, sessionToken, authEnabled } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +23,11 @@ async function handle(req) {
   try {
     const o = await loadOverview();
     const type = req.nextUrl.searchParams.get('type') || 'digest';
-    const text = type === 'cheques' ? chequesText(o) : type === 'dormant' ? dormantText(o) : digestText(o);
+    let text = type === 'cheques' ? chequesText(o) : type === 'dormant' ? dormantText(o) : digestText(o);
+    if (type !== 'dormant') {
+      const extra = collectionAlertsText((await loadCollections(o)).alerts); // [collections]
+      if (extra) text += '\n\n' + extra;
+    }
     const r = await sendTelegram(text, o.settings?.telegramChatId);
     if (!r.ok) return NextResponse.json({ ok: false, error: r.error }, { status: 502 });
     return NextResponse.json({ ok: true });
