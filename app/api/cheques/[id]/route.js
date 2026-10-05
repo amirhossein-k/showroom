@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Cheque } from '@/lib/models';
-import { itemRoute, fail } from '@/lib/crud';
+import { withTransaction } from '@/lib/db';
+import { itemRoute, clean, fail } from '@/lib/crud';
 import { syncFromCheque } from '@/lib/contractService';
 
 export const dynamic = 'force-dynamic';
@@ -8,15 +9,18 @@ const h = itemRoute(Cheque);
 export const GET = h.GET;
 export const DELETE = h.DELETE;
 
-// تغییر وضعیت چک در دفتر چک → قسط قرارداد هم همگام شود
-export async function PATCH(req, ctx) {
-  const res = await h.PATCH(req, ctx);
-  if (res.ok) {
-    try {
-      await syncFromCheque(await res.clone().json());
-    } catch (e) {
-      console.error('cheque→contract sync failed', e);
-    }
+// تغییر چک در دفتر چک + همگام‌سازی قسط قرارداد — در یک تراکنش
+export async function PATCH(req, { params }) {
+  try {
+    const body = clean(await req.json());
+    const doc = await withTransaction(async (tx) => {
+      const q = await Cheque.findByIdAndUpdate(params.id, { $set: body }, { new: true, runValidators: true, session: tx.session || undefined });
+      if (!q) throw Object.assign(new Error('یافت نشد'), { status: 404 });
+      await syncFromCheque(q, tx);
+      return q;
+    });
+    return NextResponse.json(doc);
+  } catch (e) {
+    return fail(e, e.status || 400);
   }
-  return res;
 }
