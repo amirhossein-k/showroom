@@ -5,7 +5,8 @@ import { Car, Customer, Partner, Transaction, Cheque } from '@/lib/models';
 import { getSettings } from '@/lib/settings';
 import { carFinancials, isSold } from '@/lib/calc';
 import { loadOverview } from '@/lib/overview';
-import { marketAnalysis, ownDealsFor, loadMarket } from '@/lib/market';
+import { marketAnalysis, ownDealsFor } from '@/lib/market';
+import { getMarket } from '@/lib/marketPrices';
 import { ALL_DOC_KEYS } from '@/lib/constants';
 import { formatDate, formatNumber, priceShort, priceWords, toFa } from '@/lib/persian';
 import { PageHeader, Section, Money, CarStatusBadge, Plate, StayMeter, Badge, CarTitle } from '@/components/ui';
@@ -29,7 +30,7 @@ export default async function CarDetailPage({ params }) {
   const cheques = plain(chequesRaw);
   const fin = carFinancials(car, settings);
   const allCars = plain(allCarsRaw);
-  const mk = loadMarket();
+  const mk = await getMarket();
   const analysis = marketAnalysis(car, { ownDeals: ownDealsFor(car, allCars.filter(isSold)), settings, market: mk });
   const interested = customers.filter((c) => (c.interestedCars || []).some((x) => String(x) === String(car._id)));
   const key = `${car.brand} ${car.model}`.replace(/[\s‌]/g, '').toLowerCase();
