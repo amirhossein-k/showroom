@@ -26,7 +26,7 @@ export default function CarFilters({ brands = [], colors = [] }) {
     router.push(`/cars?${p.toString()}`);
   };
   const sel = (k, opts, def = '') => (
-    <select className="input" value={sp.get(k) || def} onChange={(e) => set(k, e.target.value)}>
+    <select className="input" aria-label={{ status: 'وضعیت خودرو', brand: 'برند', color: 'رنگ', price: 'بازه قیمت', maxKm: 'حداکثر کارکرد', ownership: 'مالکیت', sort: 'مرتب‌سازی' }[k]} value={sp.get(k) || def} onChange={(e) => set(k, e.target.value)}>
       {Object.entries(opts).map(([v, l]) => (
         <option key={v} value={v}>{l}</option>
       ))}
@@ -42,7 +42,7 @@ export default function CarFilters({ brands = [], colors = [] }) {
           set('q', q.trim());
         }}
       >
-        <div className="relative flex-1">
+        <div className="relative min-w-0 flex-1">
           <Icon name="search" className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-mute" />
           <input className="input pr-10" placeholder="جستجوی مدل، شاسی یا پلاک…" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>

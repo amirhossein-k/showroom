@@ -1,11 +1,12 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
+import { useDialog } from './useDialog';
 import { formatNumber, parseNumber, priceWords, toFa } from '@/lib/persian';
 import { toJalali, jalaliToDate, jalaliMonthLength, JALALI_MONTHS } from '@/lib/jalali';
 import Icon from './Icon';
 
 /** ورودی مبلغ: جداکننده هزارگان + نمایش زندهٔ مبلغ به حروف */
-export function MoneyInput({ value, onChange, placeholder = 'مثلاً ۷۵۰٬۰۰۰٬۰۰۰', words = true, autoFocus }) {
+export function MoneyInput({ value, onChange, placeholder = 'مثلاً ۷۵۰٬۰۰۰٬۰۰۰', words = true, autoFocus, ariaLabel }) {
   const v = Number(value) || 0;
   return (
     <div>
@@ -13,6 +14,7 @@ export function MoneyInput({ value, onChange, placeholder = 'مثلاً ۷۵۰٬
         <input
           dir="ltr"
           inputMode="numeric"
+          aria-label={ariaLabel}
           autoFocus={autoFocus}
           className="input num pl-16 text-left text-base font-bold"
           placeholder={placeholder}
@@ -42,11 +44,11 @@ export function JalaliDateInput({ value, onChange, minYear, maxYear }) {
   const init = value ? toJalali(value) : { jy: '', jm: '', jd: '' };
   const [st, setSt] = useState(init);
   useEffect(() => {
-    if (value) setSt(toJalali(value));
+    setSt(value ? toJalali(value) : { jy: '', jm: '', jd: '' });
   }, [value]);
 
   const years = [];
-  for (let y = maxYear || nowJ.jy + 2; y >= (minYear || nowJ.jy - 6); y--) years.push(y);
+  for (let y = Math.max(maxYear || nowJ.jy + 2, Number(st.jy) || 0); y >= Math.min(minYear || nowJ.jy - 6, Number(st.jy) || nowJ.jy); y--) years.push(y);
   const maxDay = st.jy && st.jm ? jalaliMonthLength(Number(st.jy), Number(st.jm)) : 31;
 
   const update = (patch) => {
@@ -58,8 +60,8 @@ export function JalaliDateInput({ value, onChange, minYear, maxYear }) {
   };
 
   return (
-    <div className="flex gap-1.5">
-      <select className="input w-[72px] px-2" value={st.jd} onChange={(e) => update({ jd: Number(e.target.value) || '' })} aria-label="روز">
+    <div className="grid grid-cols-[minmax(0,.8fr)_minmax(0,1.3fr)_minmax(0,1fr)] gap-1.5 sm:flex">
+      <select className="input min-w-0 px-2 sm:w-[72px]" value={st.jd} onChange={(e) => update({ jd: Number(e.target.value) || '' })} aria-label="روز">
         <option value="">روز</option>
         {Array.from({ length: maxDay }, (_, i) => i + 1).map((d) => (
           <option key={d} value={d}>{toFa(d)}</option>
@@ -71,13 +73,13 @@ export function JalaliDateInput({ value, onChange, minYear, maxYear }) {
           <option key={m} value={i + 1}>{m}</option>
         ))}
       </select>
-      <select className="input w-[88px] px-2" value={st.jy} onChange={(e) => update({ jy: Number(e.target.value) || '' })} aria-label="سال">
+      <select className="input min-w-0 px-2 sm:w-[88px]" value={st.jy} onChange={(e) => update({ jy: Number(e.target.value) || '' })} aria-label="سال">
         <option value="">سال</option>
         {years.map((y) => (
           <option key={y} value={y}>{toFa(y)}</option>
         ))}
       </select>
-      <button type="button" className="btn-ghost shrink-0 px-3" onClick={() => update(toJalali(new Date()))} title="امروز">
+      <button type="button" className="btn-ghost col-span-3 shrink-0 px-3" onClick={() => update(toJalali(new Date()))} title="امروز">
         امروز
       </button>
     </div>
@@ -85,24 +87,16 @@ export function JalaliDateInput({ value, onChange, minYear, maxYear }) {
 }
 
 export function Modal({ open, onClose, title, children, wide }) {
-  useEffect(() => {
-    if (!open) return;
-    const k = (e) => e.key === 'Escape' && onClose?.();
-    window.addEventListener('keydown', k);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.removeEventListener('keydown', k);
-      document.body.style.overflow = '';
-    };
-  }, [open, onClose]);
+  const titleId = useId();
+  const dialogRef = useDialog(open, onClose);
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6" role="dialog" aria-modal="true">
+    <div className="no-print fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6">
       <div className="absolute inset-0 bg-asphalt-950/55 backdrop-blur-[2px]" onClick={onClose} />
-      <div className={`relative max-h-[92vh] w-full animate-rise overflow-y-auto rounded-t-3xl bg-card p-5 shadow-2xl sm:rounded-3xl sm:p-6 ${wide ? 'sm:max-w-3xl' : 'sm:max-w-xl'}`}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className={`dialog-panel relative w-full animate-rise overflow-y-auto overscroll-contain rounded-t-3xl bg-card p-5 shadow-2xl sm:rounded-3xl sm:p-6 ${wide ? 'sm:max-w-3xl' : 'sm:max-w-xl'}`}>
         <div className="mb-5 flex items-center justify-between">
-          <h3 className="text-xl font-black">{title}</h3>
-          <button onClick={onClose} className="grid h-10 w-10 place-items-center rounded-xl text-ink-mute hover:bg-paper" aria-label="بستن">
+          <h3 id={titleId} className="text-xl font-black">{title}</h3>
+          <button type="button" onClick={onClose} className="grid h-11 w-11 shrink-0 place-items-center rounded-xl text-ink-mute hover:bg-paper" aria-label="بستن">
             <Icon name="close" />
           </button>
         </div>
@@ -114,16 +108,17 @@ export function Modal({ open, onClose, title, children, wide }) {
 
 export function ErrorText({ error }) {
   if (!error) return null;
-  return <div className="rounded-xl bg-alarm-soft px-3 py-2 text-[15px] font-semibold text-alarm">{error}</div>;
+  return <div role="alert" className="break-words rounded-xl bg-alarm-soft px-3 py-2 text-[15px] font-semibold text-alarm">{error}</div>;
 }
 
 export function Toggle({ options, value, onChange }) {
   return (
-    <div className="inline-flex rounded-xl border border-line bg-paper p-1">
+    <div className="inline-flex max-w-full flex-wrap rounded-xl border border-line bg-paper p-1" role="group">
       {Object.entries(options).map(([k, label]) => (
         <button
           type="button"
           key={k}
+          aria-pressed={value === k}
           onClick={() => onChange ? onChange(k) : (window.location.href = `${window.location.pathname}?period=${k}`)}
           className={`rounded-lg px-3.5 py-2 text-sm font-bold transition ${value === k ? 'bg-asphalt-900 text-white shadow' : 'text-ink-soft hover:text-ink'}`}
         >

@@ -173,7 +173,7 @@ export function PartnersEditor({ carId, partners, allPartners, split }) {
               <option value="">انتخاب شریک…</option>
               {allPartners.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
             </select>
-            <div className="relative w-28">
+            <div className="relative w-20 shrink-0 sm:w-28">
               <input dir="ltr" inputMode="decimal" className="input num pl-8 text-left" value={r.share ? toFa(r.share) : ''} onChange={(e) => upd(i, { share: parseNumber(e.target.value) })} placeholder="۰" />
               <span className="absolute inset-y-0 left-3 flex items-center text-ink-mute">٪</span>
             </div>
@@ -336,6 +336,7 @@ function toFaYear() {
 
 export function CarLedger({ car, transactions, cheques, settlement }) {
   const [modal, setModal] = useState(null);
+  const [editing, setEditing] = useState(null);
   return (
     <div>
       <div className="grid gap-3 sm:grid-cols-2">
@@ -360,26 +361,30 @@ export function CarLedger({ car, transactions, cheques, settlement }) {
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2">
-        <button className="btn-ghost" onClick={() => setModal('tx')}><Icon name="plus" size={18} /> ورودی / خروجی نقد</button>
+        <button className="btn-ghost" onClick={() => { setEditing(null); setModal('tx'); }}><Icon name="plus" size={18} /> ورودی / خروجی نقد</button>
         <button className="btn-ghost" onClick={() => setModal('cheque')}><Icon name="cheque" size={18} /> ثبت چک</button>
+        <Link href="/cashflow" className="btn-ghost">دفتر نقدینگی و چاپ</Link>
       </div>
 
       <div className="mt-4 divide-y divide-line">
         {transactions.map((t) => (
-          <div key={t._id} className="flex items-center justify-between gap-3 py-3">
-            <div>
+          <div key={t._id} className="flex flex-col justify-between gap-3 py-3 sm:flex-row sm:items-center">
+            <div className="min-w-0 break-words">
               <div className="font-bold">{TX_CATEGORIES[t.category] || t.category} · <span className="font-medium text-ink-mute">{TX_METHODS[t.method]}</span></div>
               <div className="text-sm text-ink-mute">{formatDate(t.date)}{t.party ? ` · ${t.party}` : ''}</div>
             </div>
+            <div className="flex flex-wrap items-center justify-between gap-3">
             <div className={`num text-left font-extrabold ${t.direction === 'in' ? 'text-cash' : 'text-alarm'}`}>
               {t.direction === 'in' ? '+' : '−'}{priceShort(t.amount)}
+            </div>
+            <button type="button" className="btn-blue px-3" onClick={() => { setEditing(t); setModal('tx'); }} aria-label={`ویرایش تراکنش ${t.party || ''}`}>ویرایش</button>
             </div>
           </div>
         ))}
         {cheques.map((q) => (
-          <div key={q._id} className="flex items-center justify-between gap-3 py-3">
-            <div>
-              <div className="flex items-center gap-2 font-bold">
+          <div key={q._id} className="flex flex-col justify-between gap-3 py-3 sm:flex-row sm:items-center">
+            <div className="min-w-0 break-words">
+              <div className="flex flex-wrap items-center gap-2 font-bold">
                 چک {q.direction === 'received' ? 'دریافتی' : 'پرداختی'} {q.bank} <ChequeStatusBadge status={q.status} />
               </div>
               <div className="text-sm text-ink-mute">سررسید {formatDate(q.dueDate)} ({relativeDays(q.dueDate)}) · {q.party}</div>
@@ -390,8 +395,8 @@ export function CarLedger({ car, transactions, cheques, settlement }) {
         {!transactions.length && !cheques.length && <Empty>هنوز ورودی/خروجی برای این پرونده ثبت نشده.</Empty>}
       </div>
 
-      <Modal open={modal === 'tx'} onClose={() => setModal(null)} title="ثبت ورودی/خروجی نقد">
-        <TxForm fixedCar={car._id} defaults={{ direction: car.salePrice ? 'in' : 'out', category: car.salePrice ? 'sale' : 'purchase' }} onDone={() => setModal(null)} />
+      <Modal open={modal === 'tx'} onClose={() => setModal(null)} title={editing ? 'ویرایش تراکنش' : 'ثبت ورودی/خروجی نقد'}>
+        <TxForm key={editing?._id || 'new'} initial={editing} fixedCar={car._id} defaults={{ direction: car.salePrice ? 'in' : 'out', category: car.salePrice ? 'sale' : 'purchase' }} onDone={() => setModal(null)} />
       </Modal>
       <Modal open={modal === 'cheque'} onClose={() => setModal(null)} title="ثبت چک برای این خودرو">
         <ChequeForm fixedCar={car._id} onDone={() => setModal(null)} />

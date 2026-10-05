@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import Icon from './Icon';
 import PageGuide from './PageGuide'; // [guide]
+import { useDialog } from './useDialog';
 
 const NAV = [
   { href: '/', label: 'داشبورد امروز', icon: 'dashboard' },
@@ -43,6 +44,7 @@ function NavList({ path, onNavigate }) {
           <Link
             key={n.href}
             href={n.href}
+            aria-current={active ? 'page' : undefined}
             onClick={onNavigate}
             className={`group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-semibold transition ${
               active ? 'bg-white/10 text-white' : 'text-white/65 hover:bg-white/5 hover:text-white'
@@ -61,13 +63,20 @@ function NavList({ path, onNavigate }) {
 export default function Shell({ children }) {
   const path = usePathname() || '/';
   const [open, setOpen] = useState(false);
+  const drawerRef = useDialog(open, () => setOpen(false));
   useEffect(() => setOpen(false), [path]);
+  useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 1024px)');
+    const closeOnDesktop = () => { if (desktop.matches) setOpen(false); };
+    desktop.addEventListener('change', closeOnDesktop);
+    return () => desktop.removeEventListener('change', closeOnDesktop);
+  }, []);
   if (path.startsWith('/login')) return children;
 
   return (
-    <div className="min-h-screen lg:pr-72">
+    <div className="app-shell min-h-screen lg:pr-72">
       {/* سایدبار دسکتاپ */}
-      <aside className="fixed inset-y-0 right-0 z-30 hidden w-72 flex-col bg-asphalt-900 px-4 py-6 lg:flex">
+      <aside className="no-print fixed inset-y-0 right-0 z-30 hidden w-72 flex-col overflow-y-auto bg-asphalt-900 px-4 py-6 lg:flex">
         <div className="px-3">
           <Brand />
         </div>
@@ -77,18 +86,18 @@ export default function Shell({ children }) {
       </aside>
 
       {/* نوار بالا موبایل */}
-      <header className="sticky top-0 z-30 flex items-center justify-between bg-asphalt-900 px-4 py-3 lg:hidden">
+      <header className="no-print sticky top-0 z-30 flex items-center justify-between bg-asphalt-900 px-4 py-3 lg:hidden">
         <Brand />
-        <button onClick={() => setOpen(true)} className="grid h-11 w-11 place-items-center rounded-xl bg-white/10 text-white" aria-label="منو">
+        <button type="button" aria-expanded={open} aria-controls="mobile-navigation" onClick={() => setOpen(true)} className="grid h-11 w-11 place-items-center rounded-xl bg-white/10 text-white" aria-label="منو">
           <Icon name="menu" />
         </button>
       </header>
-      <div className="lane h-1 lg:hidden" />
+      <div className="no-print lane h-1 lg:hidden" />
 
       {open && (
-        <div className="fixed inset-0 z-40 lg:hidden" role="dialog">
+        <div className="no-print fixed inset-0 z-40 lg:hidden">
           <div className="absolute inset-0 bg-asphalt-950/60 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <div className="absolute inset-y-0 right-0 flex w-[82%] max-w-xs animate-rise flex-col overflow-y-auto bg-asphalt-900 px-4 py-5">
+          <div id="mobile-navigation" ref={drawerRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label="منوی اصلی" className="absolute inset-y-0 right-0 flex w-[82%] max-w-xs animate-rise flex-col overflow-y-auto bg-asphalt-900 px-4 py-5">
             <div className="flex items-center justify-between px-3">
               <Brand />
               <button onClick={() => setOpen(false)} className="grid h-10 w-10 place-items-center rounded-xl text-white/70" aria-label="بستن">
@@ -100,7 +109,7 @@ export default function Shell({ children }) {
         </div>
       )}
 
-      <main className="mx-auto max-w-[1400px] px-4 pb-24 pt-5 sm:px-6 lg:px-10 lg:pt-8"><PageGuide />{children}</main>
+      <main className="app-main mx-auto min-w-0 max-w-[1400px] px-4 pb-24 pt-5 sm:px-6 lg:px-10 lg:pt-8"><PageGuide />{children}</main>
     </div>
   );
 }

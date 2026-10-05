@@ -5,7 +5,7 @@ import { formatNumber, priceWords, priceShort, toFa } from '@/lib/persian';
 export function PageHeader({ title, subtitle, children }) {
   return (
     <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-      <div>
+      <div className="min-w-0">
         <h1 className="text-[28px] font-black leading-tight tracking-tight sm:text-[34px]">{title}</h1>
         {subtitle && <p className="mt-1 text-[15px] text-ink-mute">{subtitle}</p>}
       </div>
@@ -18,7 +18,7 @@ export function Section({ title, action, children, className = '', tone }) {
   return (
     <section className={`card p-4 sm:p-5 ${tone === 'alarm' ? 'border-alarm/30' : ''} ${className}`}>
       {(title || action) && (
-        <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           {title && <h2 className="h-section">{title}</h2>}
           {action}
         </div>
@@ -30,7 +30,7 @@ export function Section({ title, action, children, className = '', tone }) {
 
 export function Field({ label, hint, children, className = '' }) {
   return (
-    <label className={`block ${className}`}>
+    <label className={`block min-w-0 ${className}`}>
       {label && <span className="label">{label}</span>}
       {children}
       {hint && <span className="mt-1 block text-sm text-ink-mute">{hint}</span>}
@@ -134,7 +134,7 @@ export function Kv({ k, v, strong }) {
   return (
     <div className="flex items-start justify-between gap-3 py-2">
       <span className="text-[15px] text-ink-mute">{k}</span>
-      <span className={`text-left text-[15px] ${strong ? 'font-extrabold' : 'font-semibold'}`}>{v}</span>
+      <span className={`min-w-0 break-words text-left text-[15px] ${strong ? 'font-extrabold' : 'font-semibold'}`}>{v}</span>
     </div>
   );
 }

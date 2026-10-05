@@ -86,14 +86,13 @@ export default function CarForm({ initial }) {
           <div className="mt-5 rounded-2xl bg-paper p-4">
             <span className="label">پلاک</span>
             <div className="flex flex-wrap items-center gap-3">
-              <div dir="ltr" className="flex items-center gap-1.5">
-                <input className="input w-16 text-center num" placeholder="۲۲" value={f.plate.p1} onChange={(e) => setIn('plate', 'p1', digits(e.target.value, 2))} aria-label="دو رقم" />
-                <select className="input w-20 px-2 text-center" value={f.plate.letter} onChange={(e) => setIn('plate', 'letter', e.target.value)} aria-label="حرف">
+              <div dir="ltr" className="grid w-full max-w-sm grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)_minmax(0,1.1fr)_minmax(0,1fr)] items-center gap-1.5">
+                <input className="input px-1 text-center num" placeholder="۲۲" value={f.plate.p1} onChange={(e) => setIn('plate', 'p1', digits(e.target.value, 2))} aria-label="دو رقم" />
+                <select className="input px-1 text-center" value={f.plate.letter} onChange={(e) => setIn('plate', 'letter', e.target.value)} aria-label="حرف">
                   {PLATE_LETTERS.map((l) => <option key={l}>{l}</option>)}
                 </select>
-                <input className="input w-20 text-center num" placeholder="۴۸۱" value={f.plate.p2} onChange={(e) => setIn('plate', 'p2', digits(e.target.value, 3))} aria-label="سه رقم" />
-                <span className="text-ink-mute">—</span>
-                <input className="input w-16 text-center num" placeholder="۱۰" value={f.plate.region} onChange={(e) => setIn('plate', 'region', digits(e.target.value, 2))} aria-label="کد شهر" />
+                <input className="input px-1 text-center num" placeholder="۴۸۱" value={f.plate.p2} onChange={(e) => setIn('plate', 'p2', digits(e.target.value, 3))} aria-label="سه رقم" />
+                <input className="input px-1 text-center num" placeholder="۱۰" value={f.plate.region} onChange={(e) => setIn('plate', 'region', digits(e.target.value, 2))} aria-label="کد شهر" />
               </div>
               <Plate plate={f.plate} />
             </div>

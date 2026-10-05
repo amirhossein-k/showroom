@@ -138,7 +138,7 @@ export default function ContractManager({ contract: c }) {
       <div className={card}>
         <h2 className="mb-3 text-sm font-black">برنامه پرداخت</h2>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full min-w-[680px] text-sm">
             <thead>
               <tr className="border-b text-right text-xs text-ink-mute">
                 {['#', 'نوع', 'مبلغ', 'سررسید', 'بانک / شماره', 'وضعیت', ''].map((h) => (

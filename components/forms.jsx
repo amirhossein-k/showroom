@@ -1,8 +1,9 @@
 'use client';
 import { useState } from 'react';
+import Link from 'next/link';
 import { api } from '@/lib/api';
 import { LEAD_SOURCES, LEAD_STATUS, TX_CATEGORIES, TX_METHODS, CHEQUE_STATUS } from '@/lib/constants';
-import { toEnDigits, toFa } from '@/lib/persian';
+import { toEnDigits, toFa, formatNumber, formatDate } from '@/lib/persian';
 import { Field } from './ui';
 import { MoneyInput, JalaliDateInput, ErrorText, Toggle } from './inputs';
 import { useSaver } from './useSaver';
@@ -23,7 +24,7 @@ function CarSelect({ cars, value, onChange, label = 'خودروی مرتبط' })
 }
 
 export function ChequeForm({ initial, cars = [], fixedCar, onDone }) {
-  const [f, setF] = useState({ direction: 'received', number: '', sayadId: '', bank: '', amount: 0, dueDate: null, party: '', phone: '', car: fixedCar || null, status: 'pending', note: '', ...(initial || {}), car: initial?.car?._id || initial?.car || fixedCar || null });
+  const [f, setF] = useState({ direction: 'received', number: '', sayadId: '', bank: '', amount: 0, dueDate: null, party: '', phone: '', status: 'pending', note: '', ...(initial || {}), car: initial?.car?._id || initial?.car || fixedCar || null });
   const s = useSaver();
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
   const submit = (e) => {
@@ -79,25 +80,52 @@ export function ChequeForm({ initial, cars = [], fixedCar, onDone }) {
 }
 
 export function TxForm({ initial, cars = [], fixedCar, defaults = {}, onDone }) {
-  const [f, setF] = useState({ direction: 'in', category: 'sale', method: 'transfer', amount: 0, date: new Date().toISOString(), party: '', note: '', car: fixedCar || null, ...defaults, ...(initial || {}), car: initial?.car?._id || initial?.car || fixedCar || defaults.car || null });
+  const [f, setF] = useState({ direction: 'in', category: 'sale', method: 'transfer', amount: 0, date: new Date().toISOString(), party: '', note: '', ...defaults, ...(initial || {}), car: initial?.car?._id || initial?.car || fixedCar || defaults.car || null });
   const s = useSaver();
+  const [validation, setValidation] = useState('');
+  const linked = Boolean(initial?.contract);
+  const valid = Number.isSafeInteger(f.amount) && f.amount > 0 && f.date && Number.isFinite(Date.parse(f.date));
   const set = (k, v) => setF((x) => ({ ...x, [k]: v }));
   const submit = (e) => {
     e.preventDefault();
-    if (!f.amount) return;
+    if (!linked && !valid) {
+      setValidation('مبلغ صحیح مثبت و تاریخ معتبر را وارد کن.');
+      return;
+    }
+    setValidation('');
     s.run(async () => {
-      if (initial?._id) await api(`/api/transactions/${initial._id}`, 'PATCH', f);
-      else await api('/api/transactions', 'POST', f);
+      const body = linked ? { note: f.note || '' } : {
+        direction: f.direction, category: f.category, method: f.method,
+        amount: f.amount, date: f.date, party: f.party || '', note: f.note || '', car: f.car || null,
+      };
+      if (initial?._id) await api(`/api/transactions/${initial._id}`, 'PATCH', body);
+      else await api('/api/transactions', 'POST', body);
       onDone?.();
     });
   };
   return (
     <form onSubmit={submit} className="space-y-4">
+      {linked && <p className="rounded-xl bg-plate-soft p-3 text-sm leading-7 text-plate">
+        این تراکنش از قولنامه ساخته شده؛ برای حفظ هماهنگی حساب‌ها، اینجا فقط شرح قابل ویرایش است.{' '}
+        <Link className="font-bold underline" href={`/contracts/${initial.contract?._id || initial.contract}`}>مدیریت قولنامه</Link>
+      </p>}
+      {linked && <dl className="grid gap-3 rounded-xl bg-paper p-4 text-sm sm:grid-cols-2">
+        {[
+          ['نوع', f.direction === 'in' ? 'ورودی' : 'خروجی'],
+          ['مبلغ', `${formatNumber(f.amount)} تومان`],
+          ['بابت', TX_CATEGORIES[f.category] || f.category],
+          ['روش', TX_METHODS[f.method] || f.method],
+          ['تاریخ', formatDate(f.date)],
+          ['طرف حساب', f.party || 'بدون طرف حساب'],
+          ['خودرو', initial.car?.brand ? `${initial.car.brand} ${initial.car.model}` : 'بدون خودرو'],
+        ].map(([label, value]) => <div key={label} className="min-w-0"><dt className="text-ink-mute">{label}</dt><dd className="mt-1 break-words font-bold">{value}</dd></div>)}
+      </dl>}
+      <fieldset disabled={linked || s.busy} className={linked ? 'hidden' : 'min-w-0 space-y-4 disabled:opacity-70'}>
       <Toggle options={{ in: 'ورودی (دریافت)', out: 'خروجی (پرداخت)' }} value={f.direction} onChange={(v) => set('direction', v)} />
       <Field label="مبلغ *">
-        <MoneyInput value={f.amount} onChange={(v) => set('amount', v)} />
+        <MoneyInput ariaLabel="مبلغ تراکنش به تومان" value={f.amount} onChange={(v) => set('amount', v)} />
       </Field>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <Field label="بابت">
           <select className="input" value={f.category} onChange={(e) => set('category', e.target.value)}>
             {Object.entries(TX_CATEGORIES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
@@ -109,18 +137,20 @@ export function TxForm({ initial, cars = [], fixedCar, defaults = {}, onDone }) 
           </select>
         </Field>
       </div>
-      <Field label="تاریخ">
+      <Field label="تاریخ *">
         <JalaliDateInput value={f.date} onChange={(v) => set('date', v)} />
       </Field>
       <Field label="طرف حساب">
         <input className="input" value={f.party || ''} onChange={(e) => set('party', e.target.value)} />
       </Field>
       {!fixedCar && <CarSelect cars={cars} value={f.car} onChange={(v) => set('car', v)} />}
+      </fieldset>
       <Field label="شرح">
-        <input className="input" value={f.note || ''} onChange={(e) => set('note', e.target.value)} />
+        <textarea className="input" rows={3} disabled={s.busy} value={f.note || ''} onChange={(e) => set('note', e.target.value)} />
       </Field>
-      <ErrorText error={s.err} />
-      <button disabled={s.busy || !f.amount} className="btn-primary w-full">{s.busy ? 'در حال ذخیره…' : 'ثبت تراکنش'}</button>
+      <ErrorText error={validation || s.err} />
+      {!linked && !valid && <p className="text-sm text-ink-mute">مبلغ صحیح مثبت و تاریخ الزامی‌اند.</p>}
+      <button disabled={s.busy || (!linked && !valid)} className="btn-primary w-full">{s.busy ? 'در حال ذخیره…' : initial?._id ? 'ذخیره تغییرات' : 'ثبت تراکنش'}</button>
     </form>
   );
 }

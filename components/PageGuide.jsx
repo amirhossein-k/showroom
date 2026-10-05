@@ -83,12 +83,12 @@ export default function PageGuide() {
 
   return (
     <section className="no-print mb-5 rounded-2xl border border-blue-100 bg-blue-50/60 p-4 shadow-sm">
-      <div className="mb-3 flex items-start justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="text-xs font-bold text-blue-700">راهنمای این بخش</div>
           <h2 className="text-lg font-black">{g.title}</h2>
         </div>
-        <div className="flex shrink-0 gap-2">
+        <div className="flex flex-wrap gap-2">
           <Link href="/guide" className="rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-gray-700">
             راهنمای کامل
           </Link>

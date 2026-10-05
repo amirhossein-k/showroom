@@ -102,7 +102,7 @@ export default function OverviewClient({ data }) {
           <div className="space-y-4">
             {data.active.slice().sort((a, b) => b.fin.days - a.fin.days).slice(0, 5).map((c) => (
               <Link key={c._id} href={`/cars/${c._id}`} className="block rounded-xl p-2 transition hover:bg-paper">
-                <div className="mb-1 flex items-center justify-between gap-3"><CarTitle car={c} /><span className="num text-sm font-bold">{priceShort(c.askingPrice)}</span></div>
+                <div className="mb-1 flex flex-wrap items-center justify-between gap-3"><CarTitle car={c} href={false} /><span className="num text-sm font-bold">{priceShort(c.askingPrice)}</span></div>
                 <StayMeter days={c.fin.days} threshold={data.settings.dormantDays} />
               </Link>
             ))}

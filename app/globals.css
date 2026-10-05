@@ -10,9 +10,9 @@ input, select, textarea, button { font: inherit; }
 
 @layer components {
   .card { @apply rounded-2xl border border-line bg-card shadow-lift; }
-  .input { @apply w-full rounded-xl border border-line bg-white px-3 py-2.5 text-[15px] text-ink outline-none transition placeholder:text-ink-mute/70 focus:border-plate focus:ring-4 focus:ring-plate/10; }
+  .input { @apply min-w-0 w-full rounded-xl border border-line bg-white px-3 py-2.5 text-base text-ink outline-none transition placeholder:text-ink-mute/70 focus:border-plate focus:ring-4 focus:ring-plate/10; }
   .label { @apply mb-1.5 block text-sm font-semibold text-ink-soft; }
-  .btn { @apply inline-flex min-h-[42px] items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 text-sm font-bold transition active:scale-[.98] disabled:pointer-events-none disabled:opacity-50; }
+  .btn { @apply inline-flex min-h-[44px] items-center justify-center gap-2 whitespace-nowrap rounded-xl px-4 text-sm font-bold transition active:scale-[.98] disabled:pointer-events-none disabled:opacity-50; }
   .btn-primary { @apply btn bg-road text-asphalt-950 hover:bg-road-dark; }
   .btn-dark { @apply btn bg-asphalt-900 text-white hover:bg-asphalt-700; }
   .btn-blue { @apply btn bg-plate text-white hover:bg-plate-dark; }
@@ -24,6 +24,46 @@ input, select, textarea, button { font: inherit; }
   .num { font-variant-numeric: tabular-nums; }
   .lane { background-image: linear-gradient(90deg, #f5b700 0 24px, transparent 24px 48px); background-size: 48px 4px; }
   .lane-v { background-image: linear-gradient(180deg, #f5b700 0 22px, transparent 22px 44px); background-size: 4px 44px; }
+}
+
+/* Let content shrink in flex/grid layouts rather than push the page sideways. */
+.card, .grid > *, .flex > .flex-1 { min-width: 0; }
+img, video, canvas { max-width: 100%; }
+button:focus-visible, a:focus-visible, summary:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid #0b4aa2;
+  outline-offset: 3px;
+}
+.dialog-panel { max-height: 92vh; max-height: 92dvh; padding-bottom: max(1.25rem, env(safe-area-inset-bottom)); }
+.overflow-x-auto { max-width: 100%; overscroll-behavior-x: contain; }
+.cashflow-print { display: none; }
+
+@media (max-width: 639px) {
+  /* Also covers older forms with inline utility styles: prevent iOS focus zoom. */
+  input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px; }
+}
+@media (pointer: coarse) {
+  button, a.btn, a.btn-ghost, a.btn-primary, a.btn-blue { min-height: 44px; min-width: 44px; }
+}
+
+@media print {
+  @page { size: A4; margin: 12mm; }
+  html, body { background: white !important; color: black !important; }
+  .no-print, .cashflow-screen { display: none !important; }
+  .app-shell { padding: 0 !important; min-height: 0 !important; }
+  .app-main { max-width: none !important; margin: 0 !important; padding: 0 !important; }
+  .cashflow-print { display: block; font: 11pt Tahoma, sans-serif; line-height: 1.8; }
+  .cashflow-print h1 { font-size: 18pt; font-weight: bold; }
+  .cashflow-print h2 { margin-top: 8mm; font-size: 13pt; font-weight: bold; }
+  .cashflow-print header { border-bottom: 2px solid black; padding-bottom: 4mm; }
+  .cashflow-print .print-totals { display: flex; flex-wrap: wrap; gap: 4mm 8mm; margin: 4mm 0; }
+  .cashflow-print table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 9pt; }
+  .cashflow-print caption { text-align: right; font-weight: bold; margin-bottom: 2mm; }
+  .cashflow-print th, .cashflow-print td { border: 1px solid #666; padding: 2mm; text-align: right; vertical-align: top; overflow-wrap: anywhere; }
+  .cashflow-print thead { display: table-header-group; }
+  .cashflow-print tr { break-inside: avoid; }
+  .cashflow-print .print-money { font-variant-numeric: tabular-nums; }
+  .cashflow-print .print-note { white-space: pre-wrap; }
+  .cashflow-print footer { border-top: 1px solid #666; margin-top: 6mm; padding-top: 3mm; font-size: 9pt; }
 }
 
 @media (prefers-reduced-motion: reduce) {
