@@ -13,7 +13,7 @@ import { Gallery, StatusPanel, ExpensesEditor, PartnersEditor, CommissionsEditor
 import MarketCompare from '@/components/MarketCompare';
 import { DeleteButton } from '@/components/forms';
 import Icon from '@/components/Icon';
-
+import CarActions from '@/components/CarActions';
 export const dynamic = 'force-dynamic';
 
 export default async function CarDetailPage({ params }) {
@@ -48,6 +48,7 @@ export default async function CarDetailPage({ params }) {
         <Link href="/cars" className="inline-flex items-center gap-1 font-bold text-plate hover:underline">بازگشت به موجودی <span>←</span></Link>
         <div className="flex gap-2">
           <Link href={`/cars/${car._id}/edit`} className="btn-ghost"><Icon name="edit" size={17} /> ویرایش پرونده</Link>
+  <CarActions car={car} />
           <DeleteButton url={`/api/cars/${car._id}`} redirect="/cars" label="حذف" confirmText="این پرونده و تراکنش‌های مرتبط حذف نمی‌شوند. از حذف خود خودرو مطمئنی؟" />
         </div>
       </div>
