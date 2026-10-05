@@ -6,6 +6,7 @@ import { MoneyInput, NumberInput, JalaliDateInput } from './inputs';
 import { toJalali, jalaliToDate, jalaliMonthLength } from '@/lib/jalali';
 import { priceShort, formatNumber, toFa } from '@/lib/persian';
 import { DEFAULT_TERMS, PAYMENT_KINDS, isValidNationalId, isValidMobile, paymentStatus } from '@/lib/contractDefaults';
+import { PartyIdentityExtra, ContractCarDocs } from './ContractExtraFields'; // [upgrade-v2]
 
 function addJalaliMonths(iso, n) {
   const { jy, jm, jd } = toJalali(iso || new Date());
@@ -61,6 +62,7 @@ function PartyFields({ title, value, onChange, withAddress = true }) {
         <Field label="تلفن همراه" error={phErr}>
           <input className={inp} dir="ltr" inputMode="tel" maxLength={11} value={v.phone || ''} onChange={set('phone')} />
         </Field>
+        <PartyIdentityExtra value={v} onChange={onChange} />
         {withAddress && (
           <Field label="نشانی" className="sm:col-span-2">
             <textarea className={inp} rows={2} value={v.address || ''} onChange={set('address')} />
@@ -100,6 +102,7 @@ export default function ContractForm({ car, customers = [], settings = {}, contr
   const [terms, setTerms] = useState((contract?.terms?.length ? contract.terms : defaultTerms).join('\n'));
   const [witnesses, setWitnesses] = useState(contract?.witnesses?.length ? contract.witnesses : [{}, {}]);
   const [notes, setNotes] = useState(contract?.notes || '');
+  const [carDocs, setCarDocs] = useState(contract?.carDocs || { insuranceExpiry: car.insuranceExpiry });
   const [gen, setGen] = useState({ deposit: 0, depositKind: 'transfer', count: 6, every: 1, start: addJalaliMonths(today, 1), kind: 'cheque' });
   const [err, setErr] = useState('');
   const [saving, setSaving] = useState('');
@@ -169,6 +172,7 @@ export default function ContractForm({ car, customers = [], settings = {}, contr
       payments,
       terms: terms.split('\n').map((t) => t.trim()).filter(Boolean),
       witnesses: witnesses.filter((w) => w.name),
+      carDocs,
       notes,
     };
     try {
@@ -353,6 +357,8 @@ export default function ContractForm({ car, customers = [], settings = {}, contr
       <Section title="یادداشت داخلی (در چاپ نمی‌آید)">
         <textarea className={inp} rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
       </Section>
+
+      <ContractCarDocs value={carDocs} onChange={setCarDocs} />
 
       {err && <pre className="whitespace-pre-wrap rounded-lg bg-red-50 p-3 font-sans text-sm text-red-600">{err}</pre>}
 
