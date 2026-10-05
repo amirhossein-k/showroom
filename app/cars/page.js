@@ -4,7 +4,8 @@ import { connectDB, plain } from '@/lib/db';
 import { Car } from '@/lib/models';
 import { getSettings } from '@/lib/settings';
 import { carFinancials, isSold } from '@/lib/calc';
-import { marketAnalysis, ownDealsFor, loadMarket } from '@/lib/market';
+import { marketAnalysis, ownDealsFor } from '@/lib/market';
+import { getMarket } from '@/lib/marketPrices';
 import { ACTIVE_STATUSES } from '@/lib/constants';
 import { toFa, priceShort } from '@/lib/persian';
 import { PageHeader, Empty } from '@/components/ui';
@@ -43,7 +44,7 @@ export default async function CarsPage({ searchParams: sp }) {
     Car.distinct('color'),
     Car.find({ status: { $in: ['sold', 'awaiting_transfer'] } }, 'brand model year mileage salePrice status').lean(),
   ]);
-  const market = loadMarket();
+  const market = await getMarket();
   const sold = plain(soldRaw).filter(isSold);
   const cars = plain(rawCars).map((c) => ({
     ...c,
