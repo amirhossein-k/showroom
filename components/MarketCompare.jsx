@@ -1,6 +1,7 @@
 import { priceShort, formatNumber, toFa } from '@/lib/persian';
 import { Badge, Empty } from './ui';
 import { ApplyPriceButton } from './CarSections';
+import { sampleSourceLabel } from '@/lib/marketSources';
 
 export default function MarketCompare({ car, analysis }) {
   if (!analysis?.available) return <Empty>برای این مدل هنوز دادهٔ قابل مقایسه در فایل بازار نداریم.</Empty>;
@@ -27,7 +28,7 @@ export default function MarketCompare({ car, analysis }) {
         <div className="space-y-2">
           {(analysis.samples || []).map((x, i) => (
             <div key={i} className="flex items-center gap-3">
-              <div className="w-16 shrink-0 text-sm font-bold text-ink-mute">{x.source === 'deal' ? 'معامله' : x.source === 'divar' ? 'دیوار' : 'باما'}</div>
+              <div className="w-20 shrink-0 truncate text-sm font-bold text-ink-mute sm:w-28" title={x.sourceName || ''}>{x.manual && <span className="ml-1 inline-block h-1.5 w-1.5 rounded-full bg-road align-middle" aria-hidden />}{sampleSourceLabel(x)}</div>
               <div className="relative h-8 flex-1 overflow-hidden rounded-lg bg-paper">
                 <div className={`h-full rounded-lg ${x.type === 'deal' ? 'bg-cash/80' : 'bg-plate/70'}`} style={{ width: `${Math.max(7, (x.price / max) * 100)}%` }} />
                 <div className="absolute inset-y-0 right-3 flex items-center gap-2 text-sm font-extrabold">{priceShort(x.price)} <span className="font-medium text-ink-mute">· {toFa(x.year)} · {formatNumber(x.mileage)} km</span></div>
@@ -36,7 +37,7 @@ export default function MarketCompare({ car, analysis }) {
           ))}
         </div>
       </div>
-      <p className="mt-4 text-sm leading-6 text-ink-mute">قیمت‌های این صفحه فعلاً از فایل دادهٔ آزمایشی پروژه خوانده می‌شوند. معامله واقعی داخل اتودار در محاسبهٔ میانه، وزن بیشتری از آگهی می‌گیرد.</p>
+      <p className="mt-4 text-sm leading-6 text-ink-mute">نمونه‌ها ترکیبی از قیمت‌هایی است که خودت در بخش «قیمت بازار» ثبت کرده‌ای (با نقطهٔ زرد) و فایل دادهٔ پروژه. معامله‌های قطعی در محاسبهٔ میانه، وزن بیشتری از آگهی می‌گیرند.</p>
     </div>
   );
 }
